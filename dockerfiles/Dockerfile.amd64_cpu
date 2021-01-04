@@ -1,5 +1,5 @@
-FROM carml/base:amd64-cpu-latest
-MAINTAINER Abdul Dakkak <dakkak@illinois.edu>
+FROM c3sr/base:amd64-cpu-latest
+MAINTAINER Yen-Hsiang Chang <yhchang3@illinois.edu>
 
 # Build-time metadata as defined at http://label-schema.org
 ARG BUILD_DATE
@@ -22,48 +22,30 @@ LABEL org.carml.go-mxnet.build-date=$BUILD_DATE \
 
 ########## INSTALLATION STEPS ###################
 
-RUN cd /usr/src/gtest && \
-  cmake CMakeLists.txt && \
-  make && \
-  cp *.a /usr/lib
-
 WORKDIR /
 RUN git clone --single-branch --depth 1 --branch $FRAMEWORK_VERSION --recursive https://github.com/apache/incubator-mxnet mxnet
 
 RUN cd mxnet && \
-  mkdir -p /opt/mxnet &&  \
-  cp make/config.mk . && \
-  echo "USE_BLAS=openblas" >>config.mk && \
-  echo "USE_CPP_PACKAGE=0" >>config.mk && \
-  echo "USE_OPENCV=0" >>config.mk && \
-  echo "USE_PROFILER=1" >>config.mk && \
-  echo "USE_PYTHON=1" >>config.mk && \
-  echo "USE_CUDA=0" >>config.mk && \
-  echo "ADD_CFLAGS=-I/usr/include/openblas -Wno-strict-aliasing -Wno-sign-compare -ftrack-macro-expansion=0 -Wno-misleading-indentation" >>config.mk && \
-  echo "ADD_LDFLAGS=-L/usr/local/cuda/lib64" >>config.mk && \
-  make PREFIX=/opt/mxnet &&  \
-  cp -r include /opt/mxnet/ && \
-  cp -r lib /opt/mxnet/ && \
-  rm -r build
+    mkdir -p /opt/mxnet &&  \
+    cp make/config.mk . && \
+    echo "USE_BLAS=openblas" >>config.mk && \
+    echo "USE_CPP_PACKAGE=1" >>config.mk && \
+    echo "USE_OPENCV=0" >>config.mk && \
+    make PREFIX=/opt/mxnet &&  \
+    cp -r include /opt/mxnet/ && \
+    cp -r lib /opt/mxnet/ && \
+    rm -r build
 
-RUN ln -s /opt/mxnet/lib/libmxnet.so /usr/lib/libmxnet.so
 ENV LD_LIBRARY_PATH /opt/mxnet/lib:$LD_LIBRARY_PATH
 ENV LIBRARY_PATH /opt/mxnet/lib:$LIBRARY_PATH
 
 # Get Go bindings
-ENV PKG github.com/rai-project/go-mxnet
+ENV PKG github.com/c3sr/go-mxnet
 WORKDIR $GOPATH/src/$PKG
 
-RUN git clone --depth=1 https://${PKG}.git . && \
-  sed -i "/prefix=/c prefix=\/opt/mxnet" $GOPATH/src/$PKG/travis/mxnet.pc && \
-  cp $GOPATH/src/$PKG/travis/mxnet.pc /usr/lib/pkgconfig && \
-  pkg-config --libs mxnet
+RUN git clone --depth=1 https://${PKG}.git . 
 
-RUN dep ensure -v -no-vendor -update \
-    github.com/rai-project/go-mxnet \
-    github.com/rai-project/dlframework && \
-    dep ensure -v -vendor-only
+RUN dep ensure -v -vendor-only
 
-RUN go build -tags=nogpu -a -installsuffix cgo -ldflags "-s -w -X ${PKG}/Version=${VERSION} -X ${PKG}/GitCommit=${VCS_REF} -X ${PKG}/BuildDate=${BUILD_DATE}"&& \
-  go install -tags=nogpu && \
-  rm -fr vendor
+RUN go install -tags=nogpu -a -installsuffix cgo -ldflags "-s -w -X ${PKG}/Version=${VERSION} -X ${PKG}/GitCommit=${VCS_REF} -X ${PKG}/BuildDate=${BUILD_DATE}"&& \
+    rm -fr vendor

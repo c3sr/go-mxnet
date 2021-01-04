@@ -15,10 +15,10 @@ import (
   opentracing "github.com/opentracing/opentracing-go"
 	gotensor "gorgonia.org/tensor"
 	"github.com/pkg/errors"
-	"github.com/rai-project/dlframework/framework/options"
-	nvidiasmi "github.com/rai-project/nvidia-smi"
-  "github.com/rai-project/tracer"
-  cupti "github.com/rai-project/go-cupti"
+	"github.com/c3sr/dlframework/framework/options"
+	nvidiasmi "github.com/c3sr/nvidia-smi"
+  "github.com/c3sr/tracer"
+  cupti "github.com/c3sr/go-cupti"
 )
 
 // predictor for inference

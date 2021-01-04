@@ -1,2 +1,0 @@
-USE_OPENMP=0
-USE_BLAS=apple

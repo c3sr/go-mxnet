@@ -1,3 +1,0 @@
-package gmp
-
-// go-mxnet

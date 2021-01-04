@@ -10,8 +10,7 @@ push: docker_push output
 release: docker_build docker_push
 
 # Image and binary can be overidden with env vars.
-DOCKER_IMAGE ?= carml/go-mxnet
-
+DOCKER_IMAGE ?= c3sr/go-mxnet
 
 # Get System architecture
 # for now... ask carl how best to get this
@@ -23,11 +22,8 @@ GIT_COMMIT = $(strip $(shell git rev-parse --short HEAD))
 # Get the version number from the code
 CODE_VERSION = v$(strip $(shell cat ../VERSION))
 
-
 # Find out if the working directory is clean
 GIT_NOT_CLEAN_CHECK = $(shell git status --porcelain)
-
-
 
 # If we're releasing to Docker Hub, and we're going to mark it with the latest tag, it should exactly match a version release
 ifeq ($(MAKECMDGOALS),release)
@@ -53,15 +49,15 @@ endif
 BUILD_ARGS = --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 			 --build-arg VERSION=$(CODE_VERSION) \
 			 --build-arg VCS_URL=`git config --get remote.origin.url` \
-		   --build-arg VCS_REF=$(GIT_COMMIT) \
-		   --build-arg ARCH=$(ARCH) \
-			 --build-arg FRAMEWORK_VERSION="1.4.0"
+		     --build-arg VCS_REF=$(GIT_COMMIT) \
+		     --build-arg ARCH=$(ARCH) \
+			 --build-arg FRAMEWORK_VERSION="1.7.0"
 
 docker_pull_cpu:
-	docker pull carml/base:$(ARCH)-cpu-latest
+	docker pull c3sr/base:$(ARCH)-cpu-latest
 
 docker_pull_gpu:
-	docker pull carml/base:$(ARCH)-gpu-latest
+	docker pull c3sr/base:$(ARCH)-gpu-latest
 
 docker_pull: docker_pull_cpu docker_pull_gpu
 

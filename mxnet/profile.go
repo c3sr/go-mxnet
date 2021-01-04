@@ -14,9 +14,9 @@ import (
 	"github.com/Unknwon/com"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
-	"github.com/rai-project/config"
-	"github.com/rai-project/tracer"
-	"github.com/rai-project/tracer/chrome"
+	"github.com/c3sr/config"
+	"github.com/c3sr/tracer"
+	"github.com/c3sr/tracer/chrome"
 )
 
 /*

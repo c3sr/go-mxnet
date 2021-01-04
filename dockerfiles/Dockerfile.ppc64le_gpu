@@ -60,12 +60,12 @@ ENV LD_LIBRARY_PATH /opt/mxnet/lib:$LD_LIBRARY_PATH
 ENV LIBRARY_PATH /opt/mxnet/lib:$LIBRARY_PATH
 
 # Get Go bindings
-ENV PKG github.com/rai-project/go-mxnet
+ENV PKG github.com/c3sr/go-mxnet
 WORKDIR $GOPATH/src/$PKG
 
 RUN git clone --depth=1 https://${PKG}.git . && \
-  sed -i "/prefix=/c prefix=\/opt/mxnet" $GOPATH/src/github.com/rai-project/go-mxnet/travis/mxnet.pc && \
-  cp $GOPATH/src/github.com/rai-project/go-mxnet/travis/mxnet.pc /usr/lib/pkgconfig && \
+  sed -i "/prefix=/c prefix=\/opt/mxnet" $GOPATH/src/github.com/c3sr/go-mxnet/travis/mxnet.pc && \
+  cp $GOPATH/src/github.com/c3sr/go-mxnet/travis/mxnet.pc /usr/lib/pkgconfig && \
   pkg-config --libs mxnet && \
   cd $GOPATH/src/$PKG && \
   dep ensure -vendor-only && \
