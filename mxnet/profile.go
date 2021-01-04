@@ -12,11 +12,11 @@ import (
 	"unsafe"
 
 	"github.com/Unknwon/com"
-	opentracing "github.com/opentracing/opentracing-go"
-	"github.com/pkg/errors"
 	"github.com/c3sr/config"
 	"github.com/c3sr/tracer"
 	"github.com/c3sr/tracer/chrome"
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
 )
 
 /*
@@ -311,9 +311,9 @@ func (p *Profile) process() {
 	start := p.startTime
 
 	minTime := int64(0)
-  events := []chrome.TraceEvent{}
+	events := []chrome.TraceEvent{}
 	for _, event := range p.Trace.TraceEvents {
-    eventType := event.EventType
+		eventType := event.EventType
 		if eventType != "B" && eventType != "E" {
 			continue
 		}
@@ -333,8 +333,8 @@ func (p *Profile) process() {
 		}
 	}
 
-  layerSequenceIndex := 0
-  visited := map[string]bool{}
+	layerSequenceIndex := 0
+	visited := map[string]bool{}
 	for ii, event := range events {
 		events[ii].Name = strings.Trim(strings.Trim(event.Name, "["), "]")
 		if adjustTime {
@@ -347,31 +347,31 @@ func (p *Profile) process() {
 		}
 		if event.Category != "operator" {
 			continue
-    }
+		}
 
-    opName, layerName, shape := parseOpLabel(event.Name)
+		opName, layerName, shape := parseOpLabel(event.Name)
 
 		events[ii].Args["layer_sequence_index"] = layerSequenceIndex
-    events[ii].Args["layer_name"] = layerName
-    events[ii].Args["op_name"] = opName
-    events[ii].Args["shape"] = shape
-    events[ii].Args["name"] = event.Name
-    events[ii].Name = layerName
-    
-    _, ok := visited[event.Name]
-    if !ok {
-      layerSequenceIndex += 1
-      visited[event.Name] = true
-    }
-  }
-  
+		events[ii].Args["layer_name"] = layerName
+		events[ii].Args["op_name"] = opName
+		events[ii].Args["shape"] = shape
+		events[ii].Args["name"] = event.Name
+		events[ii].Name = layerName
+
+		_, ok := visited[event.Name]
+		if !ok {
+			layerSequenceIndex += 1
+			visited[event.Name] = true
+		}
+	}
+
 	p.Trace.TraceEvents = events
 }
 
 func (p *Profile) Delete() error {
 	if !com.IsFile(p.filename) {
 		return nil
-  }
+	}
 	return os.Remove(p.filename)
 }
 

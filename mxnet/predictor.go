@@ -7,25 +7,25 @@ package mxnet
 import "C"
 import (
 	"context"
+	"path/filepath"
 	"runtime"
-  "unsafe"
-  "path/filepath"
-  "strings"
-  
-  opentracing "github.com/opentracing/opentracing-go"
-	gotensor "gorgonia.org/tensor"
-	"github.com/pkg/errors"
+	"strings"
+	"unsafe"
+
 	"github.com/c3sr/dlframework/framework/options"
+	cupti "github.com/c3sr/go-cupti"
 	nvidiasmi "github.com/c3sr/nvidia-smi"
-  "github.com/c3sr/tracer"
-  cupti "github.com/c3sr/go-cupti"
+	"github.com/c3sr/tracer"
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/pkg/errors"
+	gotensor "gorgonia.org/tensor"
 )
 
 // predictor for inference
 type Predictor struct {
 	handle  C.PredictorHandle // C handle of predictor
-  options *options.Options
-  cu        *cupti.CUPTI
+	options *options.Options
+	cu      *cupti.CUPTI
 }
 
 func prod(arry []int) int {
@@ -129,7 +129,7 @@ func New(ctx context.Context, opts ...options.Option) (*Predictor, error) {
 }
 
 func (p *Predictor) GetOptions() *options.Options {
-  return p.options
+	return p.options
 }
 
 // set the input data of predictor
@@ -139,7 +139,7 @@ func (p *Predictor) GetOptions() *options.Options {
 func (p *Predictor) SetInput(key string, input *gotensor.Dense) error {
 	k := C.CString(key)
 	// free mem before return
-  defer C.free(unsafe.Pointer(k))
+	defer C.free(unsafe.Pointer(k))
 
 	success := C.MXPredSetInput(
 		p.handle,
@@ -165,7 +165,7 @@ func (p *Predictor) Forward() error {
 }
 
 func (p *Predictor) Predict(ctx context.Context, data []*gotensor.Dense) error {
-  if len(data) == 0 {
+	if len(data) == 0 {
 		return errors.New("intput data nil or empty")
 	}
 
@@ -180,13 +180,13 @@ func (p *Predictor) Predict(ctx context.Context, data []*gotensor.Dense) error {
 		}
 	}
 
-  span, ctx := tracer.StartSpanFromContext(ctx, tracer.MODEL_TRACE, "c_predict", 		
-  opentracing.Tags{
-    "evaluation_trace_level": p.GetOptions().TraceLevel(),
-  })
-  defer span.Finish()
+	span, ctx := tracer.StartSpanFromContext(ctx, tracer.MODEL_TRACE, "c_predict",
+		opentracing.Tags{
+			"evaluation_trace_level": p.GetOptions().TraceLevel(),
+		})
+	defer span.Finish()
 
-  if p.GetOptions().TraceLevel() >= tracer.FRAMEWORK_TRACE {
+	if p.GetOptions().TraceLevel() >= tracer.FRAMEWORK_TRACE {
 		// define profiling options
 		poptions := map[string]ProfileMode{
 			"profile_all":        ProfileAllDisable,
@@ -206,7 +206,7 @@ func (p *Predictor) Predict(ctx context.Context, data []*gotensor.Dense) error {
 		}
 	}
 
-  err := p.cuptiStart(ctx)
+	err := p.cuptiStart(ctx)
 	if err != nil {
 		return err
 	}
@@ -222,12 +222,12 @@ func (p *Predictor) Predict(ctx context.Context, data []*gotensor.Dense) error {
 }
 
 func (p *Predictor) cuptiStart(ctx context.Context) error {
-  opts := p.GetOptions()
+	opts := p.GetOptions()
 	if !opts.UsesGPU() || opts.TraceLevel() < tracer.SYSTEM_LIBRARY_TRACE {
 		return nil
-  }
+	}
 
-  metrics := []string{}
+	metrics := []string{}
 	if opts.GPUMetrics() != "" {
 		metrics = strings.Split(opts.GPUMetrics(), ",")
 	}
@@ -240,7 +240,7 @@ func (p *Predictor) cuptiStart(ctx context.Context) error {
 		return err
 	}
 	p.cu = cu
-  return nil 
+	return nil
 }
 
 func (p *Predictor) cuptiClose() {
@@ -251,7 +251,6 @@ func (p *Predictor) cuptiClose() {
 	p.cu.Close()
 	p.cu = nil
 }
-
 
 // get the shape of output node
 // go binding for MXPredGetOutputShape
@@ -284,8 +283,8 @@ func (p *Predictor) ReadPredictionOutputAtIndex(ctx context.Context, index int) 
 
 	if node.Dtype != gotensor.Float32 {
 		panic("only supports float32 for now")
-  }
-  
+	}
+
 	shape, err := p.GetOutputShape(index)
 	if err != nil {
 		return nil, err
@@ -301,8 +300,8 @@ func (p *Predictor) ReadPredictionOutputAtIndex(ctx context.Context, index int) 
 	)
 	if success != 0 {
 		return nil, GetLastError()
-  }
-  
+	}
+
 	return gotensor.NewDense(node.Dtype, shape, gotensor.WithBacking(output)), nil
 }
 

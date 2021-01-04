@@ -21,7 +21,6 @@ import (
 
 	"github.com/anthonynsimon/bild/imgio"
 	"github.com/anthonynsimon/bild/transform"
-	"github.com/k0kubun/pp"
 	"github.com/c3sr/config"
 	"github.com/c3sr/dlframework"
 	"github.com/c3sr/dlframework/framework/feature"
@@ -29,7 +28,8 @@ import (
 	"github.com/c3sr/downloadmanager"
 	"github.com/c3sr/go-mxnet/mxnet"
 	nvidiasmi "github.com/c3sr/nvidia-smi"
-  _ "github.com/c3sr/tracer/all"
+	_ "github.com/c3sr/tracer/all"
+	"github.com/k0kubun/pp"
 	gotensor "gorgonia.org/tensor"
 )
 
@@ -40,7 +40,7 @@ var (
 	model       = "squeezenet1.0"
 	shape       = []int{1, 3, 224, 224}
 	mean        = []float32{0.485, 0.456, 0.406}
-  scale       = []float32{0.229, 0.224, 0.225}
+	scale       = []float32{0.229, 0.224, 0.225}
 	imgDir, _   = filepath.Abs("../_fixtures")
 	imgPath     = filepath.Join(imgDir, "platypus.jpg")
 	graph_url   = "http://s3.amazonaws.com/store.carml.org/models/mxnet/gluoncv/squeezenet1.0/model-symbol.json"
@@ -105,7 +105,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 
 	height := shape[2]
 	width := shape[3]
@@ -173,10 +172,10 @@ func main() {
 	}
 	defer predictor.Close()
 
-  inputs := []tensor.Tensor{
+	inputs := []tensor.Tensor{
 		tensor.NewDense(tensor.Float32, in.Shape, tensor.WithBacking(input)),
-  }
-  
+	}
+
 	C.cudaProfilerStart()
 
 	err = predictor.Predict(ctx, inputs)
@@ -192,11 +191,11 @@ func main() {
 		panic(err)
 	}
 
-  if len(outputs) != 1 {
+	if len(outputs) != 1 {
 		panic(errors.Errorf("invalid output length. got outputs of length %v", len(outputs)))
 	}
 
-  output := outputs[0].Data().([]float32)
+	output := outputs[0].Data().([]float32)
 
 	var labels []string
 	f, err := os.Open(synset)
@@ -214,16 +213,15 @@ func main() {
 	featuresLen := len(output) / batchSize
 
 	for ii := 0; ii < batchSize; ii++ {
-    rprobs := make([]*dlframework.Feature, featuresLen)
-		soutputs := output[ii*featuresLen : (ii+1)*featuresLen]
+		rprobs := make([]*dlframework.Feature, featuresLen)
 		for jj := 0; jj < featuresLen; jj++ {
 			rprobs[jj] = feature.New(
 				feature.ClassificationIndex(int32(jj)),
 				feature.ClassificationLabel(labels[jj]),
 				feature.Probability(output[ii*featuresLen+jj]),
 			)
-    }
-    nprobs := dlframework.Features(rprobs).ProbabilitiesApplySoftmaxFloat32()
+		}
+		nprobs := dlframework.Features(rprobs).ProbabilitiesApplySoftmaxFloat32()
 		sort.Sort(nprobs)
 		features[ii] = nprobs
 	}
