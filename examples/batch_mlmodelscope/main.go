@@ -166,7 +166,7 @@ func main() {
 		options.BatchSize(batchSize),
 		options.InputNodes([]options.Node{in}),
 		options.OutputNodes([]options.Node{
-			options.Node{
+			{
 				Dtype: gotensor.Float32,
 			},
 		}),

@@ -164,7 +164,7 @@ func main() {
 		options.BatchSize(batchSize),
 		options.InputNodes([]options.Node{in}),
 		options.OutputNodes([]options.Node{
-			options.Node{Dtype: tensor.Float32},
+			{Dtype: tensor.Float32},
 		}),
 	)
 	if err != nil {

@@ -1,7 +1,6 @@
 # go-mxnet
 
 [![Build Status](https://dev.azure.com/yhchang/c3sr/_apis/build/status/c3sr.go-mxnet?branchName=master)](https://dev.azure.com/yhchang/c3sr/_build/latest?definitionId=6&branchName=master)
-[![Build Status](https://dev.azure.com/dakkak/rai/_apis/build/status/rai-project.go-mxnet)](https://dev.azure.com/dakkak/rai/_build/latest?definitionId=8)
 [![Go Report Card](https://goreportcard.com/badge/github.com/c3sr/go-mxnet)](https://goreportcard.com/report/github.com/c3sr/go-mxnet)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 

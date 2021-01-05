@@ -21,22 +21,34 @@ LABEL org.carml.go-mxnet.build-date=$BUILD_DATE \
   org.carml.go-mxnet.schema-version="1.0"
 
 ########## INSTALLATION STEPS ###################
+ENV DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get update && apt-get install -y libopencv-dev
+RUN apt-get update && apt-get install -y libssl-dev libopencv-dev tzdata ninja-build && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
+  dpkg-reconfigure --frontend noninteractive tzdata
 
 WORKDIR /
+
+### Update cmake version ###
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.19.2/cmake-3.19.2.tar.gz && \
+  tar -xzvf cmake-3.19.2.tar.gz && \
+  cd cmake-3.19.2 && \
+  ./bootstrap && make && make install && \
+  cd .. && rm -fr cmake-3.19.2* && cmake --version
+
 RUN git clone --single-branch --depth 1 --branch $FRAMEWORK_VERSION --recursive https://github.com/apache/incubator-mxnet mxnet
 
 RUN cd mxnet && \
-    mkdir -p /opt/mxnet &&  \
-    cp make/config.mk . && \
-    echo "USE_BLAS=openblas" >>config.mk && \
-    echo "USE_CPP_PACKAGE=1" >>config.mk && \
-    echo "USE_OPENCV=0" >>config.mk && \
-    make PREFIX=/opt/mxnet &&  \
-    cp -r include /opt/mxnet/ && \
+    mkdir -p /opt/mxnet && \
+    mkdir build && cd build && \
+    cmake -DUSE_CUDA=0 -DUSE_CPP_PACKAGE=1 -GNinja .. && \
+    ninja -v && \
+    cp -r ../include /opt/mxnet/ && \
     cp -r lib /opt/mxnet/ && \
-    rm -r build
+    cd / && \
+    rm -fr mxnet
 
 ENV LD_LIBRARY_PATH /opt/mxnet/lib:$LD_LIBRARY_PATH
 ENV LIBRARY_PATH /opt/mxnet/lib:$LIBRARY_PATH
