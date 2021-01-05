@@ -22,6 +22,8 @@ LABEL org.carml.go-mxnet.build-date=$BUILD_DATE \
 
 ########## INSTALLATION STEPS ###################
 
+RUN apt-get update && apt-get install -y libopencv-dev
+
 WORKDIR /
 RUN git clone --single-branch --depth 1 --branch $FRAMEWORK_VERSION --recursive https://github.com/apache/incubator-mxnet mxnet
 

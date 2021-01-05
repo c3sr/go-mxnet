@@ -22,6 +22,8 @@ LABEL org.carml.go-mxnet.build-date=$BUILD_DATE \
 
 ########## INSTALLATION STEPS ###################
 
+RUN apt-get update && apt-get install -y libopencv-dev
+
 WORKDIR /
 RUN git clone --single-branch --depth 1 --branch $FRAMEWORK_VERSION --recursive https://github.com/apache/incubator-mxnet mxnet
 
@@ -29,6 +31,7 @@ RUN cd mxnet && \
     mkdir -p /opt/mxnet &&  \
     cp make/config.mk . && \
     echo "USE_CUDA=1" >>config.mk && \
+    echo "USE_CUDA_PATH=/usr/local/cuda" >>config.mk && \
     echo "USE_BLAS=openblas" >>config.mk && \
     echo "USE_CPP_PACKAGE=1" >>config.mk && \
     echo "USE_OPENCV=0" >>config.mk && \
