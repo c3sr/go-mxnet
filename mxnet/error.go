@@ -1,8 +1,10 @@
 package mxnet
 
 /*
-#include <mxnet/c_predict_api.h>
 #include <stdlib.h>
+#include <stdbool.h>
+#include <stdint.h>
+#include <mxnet/c_predict_api.h>
 */
 import "C"
 import (

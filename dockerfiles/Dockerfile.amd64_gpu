@@ -49,7 +49,7 @@ RUN cd mxnet && \
     cmake -DUSE_CUDA=1 \
     -DMXNET_CUDA_ARCH="5.2 6.0 6.1 7.0 7.5+PTX" \
     -DUSE_CUDA_PATH=/usr/local/cuda \
-    -DUSE_CUDNN=1 -DUSE_CPP_PACKAGE=1 -GNinja .. && \
+    -DUSE_CUDNN=1 -DUSE_CPP_PACKAGE=1 -DBUILD_CPP_EXAMPLES=0 -GNinja .. && \
     ninja -v && \
     cp -r ../include /opt/mxnet/ && \
     cp -r lib /opt/mxnet/ && \

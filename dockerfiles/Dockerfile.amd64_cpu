@@ -43,7 +43,7 @@ RUN git clone --single-branch --depth 1 --branch $FRAMEWORK_VERSION --recursive 
 RUN cd mxnet && \
     mkdir -p /opt/mxnet && \
     mkdir build && cd build && \
-    cmake -DUSE_CUDA=0 -DUSE_CPP_PACKAGE=1 -GNinja .. && \
+    cmake -DUSE_CUDA=0 -DUSE_CPP_PACKAGE=1 -DBUILD_CPP_EXAMPLES=0 -GNinja .. && \
     ninja -v && \
     cp -r ../include /opt/mxnet/ && \
     cp -r lib /opt/mxnet/ && \
