@@ -41,12 +41,12 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.19.2/cmake-3.19.2
 RUN git clone --single-branch --depth 1 --branch $FRAMEWORK_VERSION --recursive https://github.com/apache/incubator-mxnet mxnet
 
 RUN cd mxnet && \
-    mkdir -p /opt/mxnet && \
+    mkdir -p /opt/mxnet/lib && \
     mkdir build && cd build && \
     cmake -DUSE_CUDA=0 -DUSE_CPP_PACKAGE=1 -DBUILD_CPP_EXAMPLES=0 -GNinja .. && \
     ninja -v && \
     cp -r ../include /opt/mxnet/ && \
-    cp -r lib /opt/mxnet/ && \
+    cp libmxnet.so /opt/mxnet/lib/ && \
     cd / && \
     rm -fr mxnet
 
