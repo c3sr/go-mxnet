@@ -24,12 +24,12 @@ import (
 typedef struct MXCallbackList MXCallbackList;
 #include <mxnet/c_api.h>
 #include <stdlib.h>
+#include "cbits/timer.h"
 */
 import "C"
 
 var (
-	initTime   = time.Now()
-	adjustTime = false
+	offset = int64(C.Getoffset())
 )
 
 type Profile struct {
@@ -307,41 +307,24 @@ func parseOpLabel(name string) (opName, layerName, shape string) {
 }
 
 func (p *Profile) process() {
-	timeUnit := time.Microsecond
-	start := p.startTime
 
-	minTime := int64(0)
 	events := []chrome.TraceEvent{}
 	for _, event := range p.Trace.TraceEvents {
 		eventType := event.EventType
 		if eventType != "B" && eventType != "E" {
 			continue
 		}
-		t := initTime.Add(time.Duration(event.Timestamp) * timeUnit)
-		if start.After(t) {
-			continue
-		}
+
 		events = append(events, event)
 		if eventType != "B" {
 			continue
 		}
-		if adjustTime {
-			if minTime != 0 && minTime < event.Timestamp {
-				continue
-			}
-			minTime = event.Timestamp
-		}
 	}
 
-	layerSequenceIndex := 0
-	visited := map[string]bool{}
 	for ii, event := range events {
-		events[ii].Name = strings.Trim(strings.Trim(event.Name, "["), "]")
-		if adjustTime {
-			events[ii].Time = start.Add(time.Duration(event.Timestamp-minTime) * timeUnit)
-		} else {
-			events[ii].Time = time.Unix(0, event.Timestamp*int64(timeUnit))
-		}
+
+		events[ii].Time = time.Unix(0, (offset + event.Timestamp) * 1000)
+
 		if events[ii].Args == nil {
 			events[ii].Args = make(map[string]interface{})
 		}
@@ -349,20 +332,11 @@ func (p *Profile) process() {
 			continue
 		}
 
-		opName, layerName, shape := parseOpLabel(event.Name)
-
-		events[ii].Args["layer_sequence_index"] = layerSequenceIndex
-		events[ii].Args["layer_name"] = layerName
-		events[ii].Args["op_name"] = opName
-		events[ii].Args["shape"] = shape
+		events[ii].Args["layer_sequence_index"] = ii / 2
+		events[ii].Args["layer_name"] = event.Name
+		events[ii].Args["op_name"] = event.Name
 		events[ii].Args["name"] = event.Name
-		events[ii].Name = layerName
 
-		_, ok := visited[event.Name]
-		if !ok {
-			layerSequenceIndex += 1
-			visited[event.Name] = true
-		}
 	}
 
 	p.Trace.TraceEvents = events
