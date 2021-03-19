@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Unknwon/com"
+	"github.com/unknwon/com"
 )
 
 // Random number state.

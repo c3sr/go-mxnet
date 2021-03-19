@@ -11,7 +11,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/Unknwon/com"
+	"github.com/unknwon/com"
 	"github.com/c3sr/config"
 	"github.com/c3sr/tracer"
 	"github.com/c3sr/tracer/chrome"

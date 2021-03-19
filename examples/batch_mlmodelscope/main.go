@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/Unknwon/com"
+	"github.com/unknwon/com"
 	"github.com/c3sr/config"
 	"github.com/c3sr/dlframework"
 	"github.com/c3sr/dlframework/framework/feature"
@@ -24,7 +24,7 @@ import (
 	"github.com/c3sr/tracer"
 	_ "github.com/c3sr/tracer/all"
 	"github.com/chewxy/math32"
-	"github.com/k0kubun/pp"
+	"github.com/k0kubun/pp/v3"
 	"github.com/pkg/errors"
 	gotensor "gorgonia.org/tensor"
 )

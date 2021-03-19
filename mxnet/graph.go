@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"sort"
 
-	"github.com/Unknwon/com"
+	"github.com/unknwon/com"
 	"github.com/pkg/errors"
 	"gonum.org/v1/gonum/graph"
 	"gonum.org/v1/gonum/graph/simple"
