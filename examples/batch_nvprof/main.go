@@ -29,7 +29,7 @@ import (
 	"github.com/c3sr/go-mxnet/mxnet"
 	nvidiasmi "github.com/c3sr/nvidia-smi"
 	_ "github.com/c3sr/tracer/all"
-	"github.com/k0kubun/pp"
+	"github.com/k0kubun/pp/v3"
 	gotensor "gorgonia.org/tensor"
 )
 
