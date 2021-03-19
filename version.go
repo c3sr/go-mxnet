@@ -1,7 +1,7 @@
 package gmp
 
 var (
-	Version   = "0.4.1"
+	Version   = "1.0.0"
 	BuildDate = "undefined"
 	GitCommit = "undefined"
 )
