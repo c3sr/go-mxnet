@@ -1,4 +1,4 @@
-FROM c3sr/base:amd64-cpu-latest
+FROM c3sr/base:amd64-cpu-go1.15-latest
 MAINTAINER Yen-Hsiang Chang <yhchang3@illinois.edu>
 
 # Build-time metadata as defined at http://label-schema.org
@@ -7,7 +7,8 @@ ARG VCS_REF
 ARG VCS_URL
 ARG VERSION
 ARG ARCH
-ARG FRAMEWORK_VERSION
+ARG MXNET_VERSION
+
 LABEL org.carml.go-mxnet.build-date=$BUILD_DATE \
   org.carml.go-mxnet.name="go-mxnet bindings for go" \
   org.carml.go-mxnet.description="" \
@@ -17,19 +18,12 @@ LABEL org.carml.go-mxnet.build-date=$BUILD_DATE \
   org.carml.go-mxnet.vendor="MLModelScope" \
   org.carml.go-mxnet.arch=$ARCH \
   org.carml.go-mxnet.version=$VERSION \
-  org.carml.go-mxnet.framework_version=$FRAMEWORK_VERSION \
+  org.carml.go-mxnet.framework_version=$MXNET_VERSION \
   org.carml.go-mxnet.schema-version="1.0"
 
 ########## INSTALLATION STEPS ###################
-ENV DEBIAN_FRONTEND=noninteractive
-
-RUN apt-get update && apt-get install -y libssl-dev libopencv-dev tzdata ninja-build && \
+RUN apt update && apt install -y libssl-dev libopencv-dev ninja-build && \
     rm -rf /var/lib/apt/lists/*
-
-RUN ln -fs /usr/share/zoneinfo/America/Chicago /etc/localtime && \
-  dpkg-reconfigure --frontend noninteractive tzdata
-
-WORKDIR /
 
 ### Update cmake version ###
 RUN wget https://github.com/Kitware/CMake/releases/download/v3.19.2/cmake-3.19.2.tar.gz && \
@@ -38,29 +32,26 @@ RUN wget https://github.com/Kitware/CMake/releases/download/v3.19.2/cmake-3.19.2
   ./bootstrap && make && make install && \
   cd .. && rm -fr cmake-3.19.2* && cmake --version
 
-RUN git clone --single-branch --depth 1 --branch $FRAMEWORK_VERSION --recursive https://github.com/apache/incubator-mxnet mxnet
+RUN git clone --single-branch --depth 1 --branch $MXNET_VERSION --recursive https://github.com/apache/incubator-mxnet mxnet
 
 RUN cd mxnet && \
-    mkdir -p /opt/mxnet/lib && \
+    mkdir -p ${FRAMEWORKS_DIR}/mxnet/lib && \
     mkdir build && cd build && \
     cmake -DUSE_CUDA=0 -DUSE_CPP_PACKAGE=1 -DBUILD_CPP_EXAMPLES=0 -GNinja .. && \
     ninja -v && \
-    mv ../include /opt/mxnet/ && \
-    mv libmxnet.so /opt/mxnet/lib/ && \
-    mv /mxnet/build/3rdparty/openmp/runtime/src/libomp.so /opt/mxnet/lib/ && \
+    mv ../include ${FRAMEWORKS_DIR}/mxnet/ && \
+    mv libmxnet.so ${FRAMEWORKS_DIR}/mxnet/lib/ && \
+    mv /mxnet/build/3rdparty/openmp/runtime/src/libomp.so ${FRAMEWORKS_DIR}/mxnet/lib/ && \
     cd / && \
     rm -fr mxnet
 
-ENV LD_LIBRARY_PATH /opt/mxnet/lib:$LD_LIBRARY_PATH
-ENV LIBRARY_PATH /opt/mxnet/lib:$LIBRARY_PATH
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:${FRAMEWORKS_DIR}/mxnet/lib
+ENV LIBRARY_PATH $LIBRARY_PATH:${FRAMEWORKS_DIR}/mxnet/lib
 
 # Get Go bindings
 ENV PKG github.com/c3sr/go-mxnet
-WORKDIR $GOPATH/src/$PKG
+WORKDIR /c3sr/go-mxnet
 
-RUN git clone --depth=1 https://${PKG}.git . 
+RUN git clone --depth=1 --branch=master  https://${PKG}.git .
 
-RUN dep ensure -v -vendor-only
-
-RUN go install -tags=nogpu -a -installsuffix cgo -ldflags "-s -w -X ${PKG}/Version=${VERSION} -X ${PKG}/GitCommit=${VCS_REF} -X ${PKG}/BuildDate=${BUILD_DATE}"&& \
-    rm -fr vendor
+RUN go install -a -tags=nogpu -installsuffix cgo -ldflags "-s -w -X ${PKG}/Version=${VERSION} -X ${PKG}/GitCommit=${VCS_REF} -X ${PKG}/BuildDate=${BUILD_DATE}"
