@@ -1,0 +1,73 @@
+FROM c3sr/base:amd64-gpu-go1.15-cuda11.0-latest
+MAINTAINER Yen-Hsiang Chang <yhchang3@illinois.edu>
+
+# Build-time metadata as defined at http://label-schema.org
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VCS_URL
+ARG VERSION
+ARG ARCH
+ARG MXNET_VERSION
+
+LABEL org.carml.go-mxnet.build-date=$BUILD_DATE \
+  org.carml.go-mxnet.name="go-mxnet bindings for go" \
+  org.carml.go-mxnet.description="" \
+  org.carml.go-mxnet.url="https://www.carml.org/" \
+  org.carml.go-mxnet.vcs-ref=$VCS_REF \
+  org.carml.go-mxnet.vcs-url=$VCS_URL \
+  org.carml.go-mxnet.vendor="MLModelScope" \
+  org.carml.go-mxnet.arch=$ARCH \
+  org.carml.go-mxnet.version=$VERSION \
+  org.carml.go-mxnet.framework_version=$MXNET_VERSION \
+  org.carml.go-mxnet.schema-version="1.0"
+
+########## INSTALLATION STEPS ###################
+
+# Setup LD_LIBRARY_PATH
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/cuda/extras/CUPTI/lib64:/usr/local/cuda/extras/CUPTI/lib64
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/local/cuda/lib64/stubs:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64
+
+RUN apt-get update && apt-get install -y libssl-dev libopencv-dev ninja-build && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
+
+WORKDIR /
+
+### Update cmake version ###
+RUN wget https://github.com/Kitware/CMake/releases/download/v3.19.2/cmake-3.19.2.tar.gz && \
+  tar -xzvf cmake-3.19.2.tar.gz && \
+  cd cmake-3.19.2 && \
+  ./bootstrap && make && make install && \
+  cd .. && rm -fr cmake-3.19.2* && cmake --version
+
+RUN git clone --single-branch --depth 1 --branch $MXNET_VERSION --recursive https://github.com/apache/incubator-mxnet mxnet
+
+RUN cd mxnet && \
+    mkdir -p ${FRAMEWORKS_DIR}/mxnet/lib && \
+    mkdir build && cd build && \
+    cmake -DUSE_CUDA=1 \
+    -DMXNET_CUDA_ARCH="7.0 7.5" \
+    -DUSE_CUDA_PATH=/usr/local/cuda \
+    -DUSE_CUDNN=1 -DUSE_CPP_PACKAGE=1 -DBUILD_CPP_EXAMPLES=0 -GNinja .. && \
+    ninja -v && \
+    mv ../include ${FRAMEWORKS_DIR}/mxnet/ && \
+    mv libmxnet.so ${FRAMEWORKS_DIR}/mxnet/lib/ && \
+    mv /mxnet/build/3rdparty/openmp/runtime/src/libomp.so ${FRAMEWORKS_DIR}/mxnet/lib/ && \
+    cd / && \
+    rm -fr mxnet
+
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:${FRAMEWORKS_DIR}/mxnet/lib
+ENV LIBRARY_PATH $LIBRARY_PATH:${FRAMEWORKS_DIR}/mxnet/lib
+
+# Get Go bindings
+ENV PKG github.com/c3sr/go-mxnet
+WORKDIR /c3sr/go-mxnet
+
+RUN git clone --depth=1 --branch=master  https://${PKG}.git .
+
+RUN go install -a -installsuffix cgo -ldflags "-s -w -X ${PKG}/Version=${VERSION} -X ${PKG}/GitCommit=${VCS_REF} -X ${PKG}/BuildDate=${BUILD_DATE}"
+
+# Remove cuda/lib64/stubs from LD_LIBRARY_PATH since it's for building purpose
+ENV LD_LIBRARY_PATH /usr/local/cuda/extras/CUPTI/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64
+ENV LD_LIBRARY_PATH $LD_LIBRARY_PATH:/usr/lib/x86_64-linux-gnu:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64

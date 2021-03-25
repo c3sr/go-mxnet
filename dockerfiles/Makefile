@@ -1,10 +1,7 @@
-
 default: docker_build_cpu
 
-# Build Docker image
-build: docker_build output
-# Push Docker image
-push: docker_push output
+build: docker_build output ## Build Docker image
+push: docker_push output ## Push Docker image
 
 # Build and push Docker image
 release: docker_build docker_push
@@ -25,6 +22,12 @@ CODE_VERSION = v$(strip $(shell cat ../VERSION))
 # Find out if the working directory is clean
 GIT_NOT_CLEAN_CHECK = $(shell git status --porcelain)
 
+# Version of cuda to use
+CUDA_VERSION ?= 10.0
+
+# Version fo MXNET to use
+MXNET_VERSION ?= 1.8.0
+
 # If we're releasing to Docker Hub, and we're going to mark it with the latest tag, it should exactly match a version release
 ifeq ($(MAKECMDGOALS),release)
 # Use the version number as the release tag.
@@ -40,7 +43,6 @@ ifneq ($(VERSION_COMMIT), $(GIT_COMMIT))
 $(error echo You are trying to push a build based on commit $(GIT_COMMIT) but the tagged release version is $(VERSION_COMMIT))
 endif
 
-
 else
 # Add the commit ref for development builds. Mark as dirty if the working directory isn't clean
 DOCKER_TAG = $(CODE_VERSION)-$(GIT_COMMIT)$(DOCKER_TAG_SUFFIX)
@@ -49,38 +51,31 @@ endif
 BUILD_ARGS = --build-arg BUILD_DATE=`date -u +"%Y-%m-%dT%H:%M:%SZ"` \
 			 --build-arg VERSION=$(CODE_VERSION) \
 			 --build-arg VCS_URL=`git config --get remote.origin.url` \
-		     --build-arg VCS_REF=$(GIT_COMMIT) \
-		     --build-arg ARCH=$(ARCH) \
-			 --build-arg FRAMEWORK_VERSION="1.7.0"
-
-docker_pull_cpu:
-	docker pull c3sr/base:$(ARCH)-cpu-latest
-
-docker_pull_gpu:
-	docker pull c3sr/base:$(ARCH)-gpu-latest
-
-docker_pull: docker_pull_cpu docker_pull_gpu
-
-docker_build_gpu: # Build GPU Docker image
-	@docker build $(BUILD_ARGS) \
-		-f Dockerfile.$(ARCH)_gpu \
-		-t $(DOCKER_IMAGE):$(ARCH)-gpu-$(DOCKER_TAG) .
-docker_build_cpu:  # Build CPU Docker image
-	@docker build $(BUILD_ARGS) \
-		-f Dockerfile.$(ARCH)_cpu \
-		-t "$(DOCKER_IMAGE):$(ARCH)-cpu-$(DOCKER_TAG)" .
+			 --build-arg VCS_REF=$(GIT_COMMIT) \
+		 	 --build-arg ARCH=$(ARCH) \
+			 --build-arg MXNET_VERSION=$(MXNET_VERSION)
 
 docker_build: docker_build_cpu docker_build_gpu
 
-docker_push_cpu: # Tag image as latest and Push to DockerHub
-	docker tag $(DOCKER_IMAGE):$(ARCH)-cpu-$(DOCKER_TAG) $(DOCKER_IMAGE):$(ARCH)-cpu-latest
-	docker push $(DOCKER_IMAGE):$(ARCH)-cpu-$(DOCKER_TAG)
-	docker push $(DOCKER_IMAGE):$(ARCH)-cpu-latest
+docker_build_cpu: # Build CPU Docker image
+	@docker build $(BUILD_ARGS) \
+		-f Dockerfile.$(ARCH)_cpu_mxnet$(MXNET_VERSION) \
+		-t $(DOCKER_IMAGE):$(ARCH)-cpu-mxnet$(MXNET_VERSION)-$(DOCKER_TAG) .
+
+docker_build_gpu: # Build GPU Docker image
+	@docker build $(BUILD_ARGS) \
+		-f Dockerfile.$(ARCH)_gpu_mxnet$(MXNET_VERSION)_cuda$(CUDA_VERSION) \
+		-t $(DOCKER_IMAGE):$(ARCH)-gpu-mxnet$(MXNET_VERSION)-cuda$(CUDA_VERSION)-$(DOCKER_TAG) .
+
+docker_push_cpu: # Tag image as latest and Push to Dockerhub
+	docker tag $(DOCKER_IMAGE):$(ARCH)-cpu-mxnet$(MXNET_VERSION)-$(DOCKER_TAG) $(DOCKER_IMAGE):$(ARCH)-cpu-mxnet$(MXNET_VERSION)-latest
+	docker push $(DOCKER_IMAGE):$(ARCH)-cpu-mxnet$(MXNET_VERSION)-$(DOCKER_TAG)
+	docker push $(DOCKER_IMAGE):$(ARCH)-cpu-mxnet$(MXNET_VERSION)-latest
 
 docker_push_gpu: # Tag image as latest and Push to DockerHub
-	docker tag $(DOCKER_IMAGE):$(ARCH)-gpu-$(DOCKER_TAG) $(DOCKER_IMAGE):$(ARCH)-gpu-latest
-	docker push $(DOCKER_IMAGE):$(ARCH)-gpu-$(DOCKER_TAG)
-	docker push $(DOCKER_IMAGE):$(ARCH)-gpu-latest
+	docker tag $(DOCKER_IMAGE):$(ARCH)-gpu-mxnet$(MXNET_VERSION)-cuda$(CUDA_VERSION)-$(DOCKER_TAG) $(DOCKER_IMAGE):$(ARCH)-gpu-mxnet$(MXNET_VERSION)-cuda$(CUDA_VERSION)-latest
+	docker push $(DOCKER_IMAGE):$(ARCH)-gpu-mxnet$(MXNET_VERSION)-cuda$(CUDA_VERSION)-$(DOCKER_TAG)
+	docker push $(DOCKER_IMAGE):$(ARCH)-gpu-mxnet$(MXNET_VERSION)-cuda$(CUDA_VERSION)-latest
 
 docker_push: docker_push_cpu docker_push_gpu
 
